@@ -4,6 +4,7 @@ boxTB BYTE "===========================================================",13,10,0
 boxLR BYTE "|                                                         |",13,10,0
 cactusTest BYTE "\|/",13,10,0
 cactusTest2 BYTE "|||",13,10,0
+gameLoop BYTE 0
 .code
 createBox proc
 mov edi,OFFSET boxTB
@@ -49,8 +50,28 @@ call WriteString
 ret
 createBox endp
 
+loopTest proc
+mov ecx, 0
+textLoop:
+	.IF	gameLoop == 0
+	mov edx, OFFSET cactusTest
+	call WriteString
+	inc ecx
+	cmp ecx,2
+	je changeGameLoop
+	jmp textLoop
+	.ELSE
+	ret
+	.ENDIF
+	changeGameLoop:
+		mov edi, offset gameLoop
+		mov DWORD PTR [edi],1
+		jmp textLoop
+loopTest endp
+
 main PROC
  call createBox
+ call loopTest
  exit
  main ENDP
 END main
