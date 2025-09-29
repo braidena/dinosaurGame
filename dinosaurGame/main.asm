@@ -1,97 +1,59 @@
 INCLUDE Irvine32.inc
 .data
-boxTB BYTE "===========================================================",13,10,0
-boxLR BYTE "|                                                         |",13,10,0
-cactusTest BYTE "\|/",13,10,0
-cactusTest2 BYTE "|||",13,10,0
+boxTB BYTE 120 dup(61),0
+cactusTest BYTE "\|/",0
+cactusTest2 BYTE "|||",0
 gameLoopBit BYTE 0
-cactusXPos BYTE 5
-cactusYPos BYTE 5
-space BYTE "              ",0
+cactusXPos BYTE 116
 .code
-createBox proc
-mov edi,OFFSET boxTB
-mov esi,OFFSET boxLR
-
-mov dl, 39
-mov dh, 11
+createGround proc
+mov dl, 0
+mov dh, 28
 call Gotoxy
 
-mov edx,edi
-call WriteString
-
-mov ecx,8
-mov al,12
-
-
-printSides:
-	mov dl, 39
-	mov dh, al
-	inc al
-	call Gotoxy
-	mov edx,esi
-	call WriteString
-	loop printSides
-
-
-mov dl, 39
-mov dh, al
-call Gotoxy
-mov edx,edi
-call WriteString
-
-mov dl, 44
-mov dh, 18
-call Gotoxy
-mov edx, OFFSET cactusTest
-call WriteString
-mov dl, 44
-mov dh, 19
-call Gotoxy
-mov edx, OFFSET cactusTest2
+mov edx,OFFSET boxTB
 call WriteString
 ret
-createBox endp
+createGround endp
 
 game proc
 mov ecx, 0
 gameLoop:
-	.IF	gameLoopBit == 0 ; while true
+call createGround
+	.IF	gameLoopBit == 0 ; while true 
+	dec [cactusXPos]
 	mov dl, [cactusXPos]
-	mov dh, [cactusYPos]
-	call Gotoxy 
-	inc [cactusXPos]
-	mov dl, [cactusXPos]
-	cmp dl, 11
+	cmp dl, 1
 	je resetCactus
 
 printCactus:
-	mov dl, [cactusXPos-1]
-	mov dh, [cactusYPos]
-	call Gotoxy
-	mov edx,OFFSET space
-	call WriteString
 	mov dl, [cactusXPos]
-	mov dh, [cactusYPos]
+	mov dh, 26
 	call Gotoxy
 	mov edx, OFFSET cactusTest
 	call WriteString
-
-	
-
+	mov dl, [cactusXPos]
+	mov dh, 27
+	call Gotoxy
+	mov edx, OFFSET cactusTest2
+	call WriteString
 
 	inc ecx ; just to make it not infinite for now
-	cmp ecx,50
+	cmp ecx,500
 	je exitGameLoop
+	mov dl, 0
+	mov dh, 0
+	call Gotoxy ; this just makes it look better
 	mov eax, 100 ; 0.1 seconds
 	call Delay
+	call Clrscr
 	jmp gameLoop
 
 	.ELSE
 	ret
 	.ENDIF
 	resetCactus:
-		mov [cactusXPos],5
+		mov [cactusXPos],116
 		jmp printCactus
 
 	exitGameLoop: ; game loop false, aka = 1
@@ -101,7 +63,6 @@ printCactus:
 game endp
 
 main PROC
- call createBox
  call game
  exit
  main ENDP
