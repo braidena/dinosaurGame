@@ -2,6 +2,8 @@ INCLUDE Irvine32.inc
 .data
 boxTB BYTE 120 dup(61),0 ; 61 is '='
 
+startMenu byte "Press space to start!",0
+
 cactusTest BYTE "\|/",0
 cactusTest2 BYTE "|||",0
 
@@ -9,7 +11,7 @@ gameLoopBit BYTE 0 ; boolean for game loop
 
 cactusXPos BYTE 116 ; starting x position of cactus
 
-jumpBool BYTE 1 ; boolean for if the dinosaur is jumping
+jumpBool BYTE 0 ; boolean for if the dinosaur is jumping
 
 tempDino BYTE "|o|",0 ; the dinosaur, temporary
 dinoCount BYTE 0 ; counter for the dinosaur y array
@@ -92,7 +94,7 @@ readyNextFrame:
 	call Gotoxy 
 	
 	; this controls how long we wait, frames per second essentially
-	mov eax, 50 ; 0.05 seconds
+	mov eax, 35 ; 0.035 seconds
 	call Delay
 	call Clrscr
 	jmp gameLoop	
@@ -153,7 +155,25 @@ readyNextFrame:
 game endp
 
 main PROC
- call game
- exit
- main ENDP
+; write the start text and dinosaur
+mov dl, 10
+mov dh, 20
+call Gotoxy
+mov edx, OFFSET startMenu
+call WriteString
+mov dl, 10
+mov dh, 27 ; get the y position from the array based on the frame count
+call Gotoxy
+mov edx, OFFSET tempDino
+call WriteString
+
+waitForSpace:
+call ReadChar
+cmp al, ' '
+je callGame
+jmp waitForSpace
+callGame:
+call game
+exit
+main ENDP
 END main
