@@ -15,6 +15,9 @@ tempDino BYTE "|o|",0 ; the dinosaur, temporary
 dinoCount BYTE 0 ; counter for the dinosaur y array
 dinoUp BYTE 0 ; boolean for if the dinosaur is going up or down
 dinoWait BYTE 1 ; experiment to get the dinosaur to update every other frame
+
+scoreText BYTE "Score: ",0
+
 .code
 createGround proc
 mov dl, 0
@@ -29,6 +32,13 @@ createGround endp
 game proc
 mov ecx, 0
 gameLoop:
+mov dl, 105
+mov dh, 4
+call Gotoxy
+mov edx, OFFSET scoreText
+call WriteString
+mov eax,ecx
+call WriteDec
 call createGround
 	.IF	gameLoopBit == 0 ; while true 
 	dec [cactusXPos]
@@ -73,7 +83,7 @@ printDino:
 	
 readyNextFrame:
 	inc ecx ; just to make it not infinite for now
-	cmp ecx,500
+	cmp ecx,5000
 	je exitGameLoop
 
 	; this block just puts the cursor at the top left
