@@ -26,6 +26,27 @@ dinoWait BYTE 1 ; experiment to get the dinosaur to update every other frame
 scoreText BYTE "Score: ",0
 
 .code
+; ---- Hitboxes ---- !change for application of adv sprites 
+; ---- Player ----
+DINO_X		EQU 10
+DINO_W		EQU 3
+DINO_H		EQU 1
+DINO_BASE_Y	EQU 27
+
+; ---- Cacti_1 ----
+CACTUS_W		EQU 3
+CACTUS_H		EQU 2
+CACTUS_Y        EQU 27
+
+; ---- BIRD ----
+BIRD_W EQU 2
+BIRD_H EQU 1
+BIRD_Y EQU 24
+
+; ---- End of Hitboxes ----
+
+
+
 createGround proc
 mov dl, 0
 mov dh, 28
@@ -110,6 +131,8 @@ printDino:
 	jne readyNextFrame
 	mov edi, offset jumpBool
 	mov BYTE PTR [edi],0
+
+
 	
 readyNextFrame:
 	inc ecx ; just to make it not infinite for now
