@@ -7,9 +7,14 @@ startMenu byte "Press space to start!",0
 cactusTest BYTE "\|/",0
 cactusTest2 BYTE "|||",0
 
+bird BYTE "\/",0
+bird2 BYTE "/\",0
+birdFlip BYTE 0
+
 gameLoopBit BYTE 0 ; boolean for game loop
 
 cactusXPos BYTE 116 ; starting x position of cactus
+birdXPos BYTE 100 ; starting x position of bird
 
 jumpBool BYTE 0 ; boolean for if the dinosaur is jumping
 
@@ -44,6 +49,7 @@ call WriteDec
 call createGround
 	.IF	gameLoopBit == 0 ; while true 
 	dec [cactusXPos]
+	dec [birdXPos]
 	mov dl, [cactusXPos]
 	; if cactus is at the left edge of the screen, reset it
 	cmp dl, 1
@@ -61,6 +67,28 @@ printCactus:
 	call Gotoxy
 	mov edx, OFFSET cactusTest2
 	call WriteString
+
+	mov dl, [birdXPos]
+	cmp dl, 1
+	je resetBird
+
+printBird:
+	; this block prints the bird
+	mov dl, [birdXPos]
+	mov dh, 24
+	call Gotoxy
+	.IF birdFlip <= 10
+	mov edx, OFFSET bird
+	inc [birdFlip]
+	call WriteString
+	.ELSEIF birdFlip <= 20
+	mov edx, OFFSET bird2
+	inc [birdFlip]
+	call WriteString
+	.ELSE
+	mov BYTE PTR [birdFlip],0
+	jmp printBird
+	.ENDIF
 
 printDino:
 	; this block prints the dinosaur
@@ -129,10 +157,10 @@ readyNextFrame:
 	dinoGoingUp:
 		mov al, [dinoCount] 
 		cmp al, 8
-		jl incDino
-		mov edi, offset dinoUp
+		jl incDino ; dino hasn't reached max height
+		mov edi, offset dinoUp ; change direction
 		mov BYTE PTR [edi],1
-		jmp decDino
+		jmp decDino ; start going down
 	incDino:
 		.if dinoWait == 0 ; makes it go every other frame
 		mov edi, offset dinoWait
@@ -147,6 +175,10 @@ readyNextFrame:
 	resetCactus:
 		mov [cactusXPos],116
 		jmp printCactus
+
+	resetBird:
+		mov [birdXPos],105
+		jmp printBird
 
 	exitGameLoop: ; game loop false, aka = 1
 		mov edi, offset gameLoopBit
