@@ -25,6 +25,9 @@ dinoWait BYTE 1 ; experiment to get the dinosaur to update every other frame
 
 scoreText BYTE "Score: ",0
 
+gameOverMsg BYTE "GAME OVER!", 0
+pressAnyMsg BYTE "Press any key to exit...",0
+
 .code
 ; ---- Hitboxes ---- !change for application of adv sprites 
 ; ---- Player ----
@@ -132,8 +135,65 @@ printDino:
 	mov edi, offset jumpBool
 	mov BYTE PTR [edi],0
 
+	; ---- Collisions ----
+movzx eax, dinoCount   ; eax = dinoCount
+mov   ecx, DINO_BASE_Y
+sub ecx, eax           ;ecx = dinoY (!! until imp of adv sprite H of top = H of Bottom)
 
-	
+mov esi, DINO_X               ; dino left
+mov edi, DINO_X + DINO_W - 1  ; dino right
+movzx ebx, cactusXPos         ; cactus left
+mov edx, ebx
+add  edx, CACTUS_W - 1        ; cactus right
+
+cmp edi, ebx
+jl  noCactusX
+
+cmp edx, esi
+jl  noCactusX
+
+
+mov ebx, CACTUS_Y - (CACTUS_H - 1) 
+mov edx, CACTUS_Y 
+
+
+cmp ecx, ebx
+jl  noCactusX
+cmp edx, ecx
+jl noCactusX
+
+mov gameLoopBit, 1 
+jmp afterCactusCheck
+noCactusX:
+AfterCactusCheck:
+
+; --Bird--
+mov esi, DINO_X               ; dino left
+mov edi, DINO_X + DINO_W - 1  ; dino right
+
+movzx ebx, birdXPos  
+mov   edx, ebx
+add  edx, BIRD_W - 1 
+
+cmp edi, ebx
+jl  noBirdX
+cmp edx, esi
+jl noBirdX
+
+mov ebx, BIRD_Y 
+mov edx, BIRD_Y
+
+cmp ecx, ebx
+jl noBirdX
+cmp edx, ecx
+jl noBirdX
+
+mov gameLoopBit, 1
+jmp afterBirdCheck
+noBirdX:
+afterBirdCheck:
+; ---- end of Collisions ----
+
 readyNextFrame:
 	inc ecx ; just to make it not infinite for now
 	cmp ecx,5000
