@@ -265,8 +265,24 @@ readyNextFrame:
 
 	exitGameLoop: ; game loop false, aka = 1
 		mov edi, offset gameLoopBit
-		mov DWORD PTR [edi],1
-		jmp gameLoop
+		mov BYTE PTR [edi],1
+		
+		call Clrscr
+		mov dl, 50 
+		mov dh, 12
+		call Gotoxy
+		mov edx, OFFSET gameOverMsg
+		call WriteString
+
+		mov dl, 48 
+		mov dh, 14 
+		call Gotoxy
+		mov edx, OFFSET pressAnyMsg
+		call WriteString
+
+		call ReadChar
+		call Clrscr
+		ret
 game endp
 
 main PROC
