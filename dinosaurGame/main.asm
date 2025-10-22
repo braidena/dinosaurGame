@@ -163,6 +163,7 @@ cmp edx, ecx
 jl noCactusX
 
 mov gameLoopBit, 1 
+jmp exitGameLoop
 jmp afterCactusCheck
 noCactusX:
 AfterCactusCheck:
@@ -189,6 +190,7 @@ cmp edx, ecx
 jl noBirdX
 
 mov gameLoopBit, 1
+jmp exitGameLoop
 jmp afterBirdCheck
 noBirdX:
 afterBirdCheck:
