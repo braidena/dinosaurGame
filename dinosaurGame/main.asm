@@ -22,7 +22,7 @@ tempDino BYTE "|o|",0 ; the dinosaur, temporary
 dinoCount BYTE 0 ; counter for the dinosaur y array
 dinoUp BYTE 0 ; boolean for if the dinosaur is going up or down
 dinoWait BYTE 1 ; experiment to get the dinosaur to update every other frame
-
+score DWORD 0 ; holds player's current score
 scoreText BYTE "Score: ",0
 
 gameOverMsg BYTE "GAME OVER!", 0
@@ -68,7 +68,10 @@ mov dh, 4
 call Gotoxy
 mov edx, OFFSET scoreText
 call WriteString
-mov eax,ecx
+mov dl, 112
+mov dh, 4; changing the score counter so that it does not rely on ECX
+call Gotoxy 
+mov eax, [score]
 call WriteDec
 call createGround
 	.IF	gameLoopBit == 0 ; while true 
@@ -195,10 +198,8 @@ noBirdX:
 	; if no key or wrong key move on
 
 readyNextFrame:
-	inc ecx ; just to make it not infinite for now
-	cmp ecx,5000
-	je exitGameLoop
-
+	inc [score] ; just to make it not infinite for now
+	
 	; this block just puts the cursor at the top left
 	mov dl, 0
 	mov dh, 0
@@ -272,8 +273,20 @@ readyNextFrame:
 		mov edx, OFFSET gameOverMsg
 		call WriteString
 
+		mov dl, 50 
+		mov dh, 13
+		call Gotoxy
+		mov edx, OFFSET scoreText
+		call WriteString
+		; number for score
+		mov dl, 58 ; 50 + "Score: "
+		mov dh, 13
+		call Gotoxy
+		mov eax, [score]
+		call WriteDec
+		; press any key
 		mov dl, 48 
-		mov dh, 14 
+		mov dh, 15
 		call Gotoxy
 		mov edx, OFFSET pressAnyMsg
 		call WriteString
