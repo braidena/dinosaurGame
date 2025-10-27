@@ -125,76 +125,74 @@ printDino:
 	call WriteString
 
 	; this block checks if the dinosaur is in the air, if it is send to jump function
-	mov dl, [jumpBool]
-	cmp dl, 0
-	je jumpDinosaur
-	; this block checks if the dinosaur is on the ground and if the user pressed space, if so send to jump function
-	call ReadKey
-	cmp al, ' '
-	jne readyNextFrame
-	mov edi, offset jumpBool
-	mov BYTE PTR [edi],0
-
 	; ---- Collisions ----
-movzx eax, dinoCount   ; eax = dinoCount
-mov   ecx, DINO_BASE_Y
-sub ecx, eax           ;ecx = dinoY (!! until imp of adv sprite H of top = H of Bottom)
+	movzx eax, dinoCount ; The player character's vertical offset
+	mov ecx, DINO_BASE_Y ; Load the base Y pos of player character (dino)
+	sub ecx, eax         ; subtracting the jump offset to find current y pos
 
-mov esi, DINO_X               ; dino left
-mov edi, DINO_X + DINO_W - 1  ; dino right
-movzx ebx, cactusXPos         ; cactus left
-mov edx, ebx
-add  edx, CACTUS_W - 1        ; cactus right
+	; --- AABB vs CACTUS ---
+	mov esi, DINO_X                ; ESI => left X coord of player
+	mov edi, DINO_X + DINO_W - 1   ; EDI => right X coord of player
+	movzx ebx, cactusXPos          ; EBX = current X pos of cactus
+	mov edx, ebx                   ; copy cactus left X into EDX
+	add edx, CACTUS_W - 1          ; EDX => right X coord of the cactus
 
-cmp edi, ebx
-jl  noCactusX
+	cmp edi, ebx    ; If dino.right < cactus.left then => no collision
+	jb noCactusX    
+	cmp edx, esi    ; If cactus.right < dino.left then => no collision
+	jb noCactusX
+	 
+	; --- Vertical Overlap checking ---
+	mov ebx, CACTUS_Y - (CACTUS_H - 1)    ; EBX => cactus top y coord
+	mov edx, CACTUS_Y                     ; EDX => cactus bottom y coord
+	cmp ecx, ebx                          ; If dino.bottom < catcus.top then => no collision
+	jb noCactusX
+	cmp edx, ecx                          ; If cactus.bottom < dino.top then => no collision
+	jb noCactusX
 
-cmp edx, esi
-jl  noCactusX
+	; if both X and Y overlap => collision
+	mov gameLoopBit, 1 ; sets flag to break game loop
+	jmp exitGameLoop   ; Jump to Game Over
 
-
-mov ebx, CACTUS_Y - (CACTUS_H - 1) 
-mov edx, CACTUS_Y 
-
-
-cmp ecx, ebx
-jl  noCactusX
-cmp edx, ecx
-jl noCactusX
-
-mov gameLoopBit, 1 
-jmp exitGameLoop
-jmp afterCactusCheck
 noCactusX:
-AfterCactusCheck:
+    ; --- Bird ---
+	mov esi, DINO_X                 ; ESI => dino left X
+	mov edi, DINO_X + DINO_W - 1    ; EDI => dino right X
+	movzx ebx, birdXPos             ; EBX => bird left X
+	mov edx, ebx                    
+	add edx, BIRD_W - 1             ; EDX => bird right X
 
-; --Bird--
-mov esi, DINO_X               ; dino left
-mov edi, DINO_X + DINO_W - 1  ; dino right
+	cmp edi, ebx                    ; If dino.right < bird.left then => no overlap
+	jb noBirdX
+	cmp edx, esi                    ; If bird.right < dino.left then => no overlap
+	jb noBirdX
 
-movzx ebx, birdXPos  
-mov   edx, ebx
-add  edx, BIRD_W - 1 
+	mov ebx, BIRD_Y                 ; EBX => bird Y coord 1x1(for now)
+	mov edx, BIRD_Y                 
+	cmp ecx, ebx                    ; If dino.bottom < bird.top then => no overlap
+	jb noBirdX
+	cmp edx, ecx                    ; If bird.bottom < dino.top then => no overlap
+	jb noBirdX
 
-cmp edi, ebx
-jl  noBirdX
-cmp edx, esi
-jl noBirdX
+	; overlap = game over
+	mov gameLoopBit, 1
+	jmp exitGameLoop
 
-mov ebx, BIRD_Y 
-mov edx, BIRD_Y
-
-cmp ecx, ebx
-jl noBirdX
-cmp edx, ecx
-jl noBirdX
-
-mov gameLoopBit, 1
-jmp exitGameLoop
-jmp afterBirdCheck
 noBirdX:
-afterBirdCheck:
-; ---- end of Collisions ----
+	cmp jumpBool,  1 ; Is the dino already jumping
+	je jumpDinosaur  ; If then continue jump arc
+	; --- keyboard check ---
+	call ReadKey    ; Try to read from buff
+	jz noKeyPressed ; ZF = 1 then no key pressed, therefore skip
+	cmp al, ' '     ; Compare key to ' '
+	jne noKeyPressed; if not ' ' skip
+
+	; space pressed
+	mov jumpBool, 1    ; Dino jumping state
+	mov dinoUp, 0      ; jump direction up
+	jmp jumpDinosaur   ; begin logic
+	noKeyPressed:
+	; if no key or wrong key move on
 
 readyNextFrame:
 	inc ecx ; just to make it not infinite for now
@@ -219,13 +217,11 @@ readyNextFrame:
 		cmp dl, 0
 		je dinoGoingUp
 	dinoGoingDown:
-		mov dl, [dinoCount]
-		cmp dl, 0
+		mov al, [dinoCount]
+		cmp al, 0
 		jg decDino
-		mov edi, offset jumpBool
-		mov BYTE PTR [edi],1
-		mov edi, offset dinoUp
-		mov BYTE PTR [edi],0
+		mov jumpBool, 0
+		mov dinoUp, 0
 		jmp readyNextFrame
 	decDino:
 		.if dinoWait == 0 ; makes it go every other frame
