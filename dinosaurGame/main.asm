@@ -1,4 +1,5 @@
 INCLUDE Irvine32.inc
+MAX_OBSTACLES = 10
 .data
 boxTB BYTE 120 dup(61),0 ; 61 is '='
 
@@ -14,7 +15,14 @@ birdFlip BYTE 0
 gameLoopBit BYTE 0 ; boolean for game loop
 
 cactusXPos BYTE 116 ; starting x position of cactus
-birdXPos BYTE 100 ; starting x position of bird
+birdXPos BYTE 116 ; starting x position of bird
+
+currAmount dword ?
+spawnDelay DWORD ?
+obstacleX DWORD MAX_OBSTACLES DUP(116)    ; x positions
+obstacleY DWORD MAX_OBSTACLES DUP(?)    ; y positions
+obstacleType DWORD MAX_OBSTACLES DUP(?) ; 0=cactus, 1=bird
+obstacleActive DWORD MAX_OBSTACLES DUP(0) ; 0=inactive, 1=active
 
 jumpBool BYTE 0 ; boolean for if the dinosaur is jumping
 
@@ -48,61 +56,127 @@ BIRD_Y EQU 24
 
 ; ---- End of Hitboxes ----
 
+spawnNewObstacle proc
+; spawns a new obstacle at random intervals
+mov esi, -1
+mov ecx, MAX_OBSTACLES
+mov edi, OFFSET obstacleActive
+
+findEmptySlot:
+	cmp DWORD PTR [edi], 0
+	je slotFound
+	add edi, 4
+	loop findEmptySlot
+	jmp noSlotFound
+
+slotFound:
+	mov eax, MAX_OBSTACLES
+	sub eax, ecx
+	mov esi, eax
+	jmp createObstacle
+
+noSlotFound:
+	ret
+
+createObstacle:
+    ; activate this slot
+    mov eax, 1
+    mov obstacleActive[esi*4], eax
+
+    ; randomize type (0=cactus, 1=bird)
+    mov eax, 2
+    call RandomRange
+    mov obstacleType[esi*4], eax
 
 
-createGround proc
-mov dl, 0
-mov dh, 28
-call Gotoxy
+    ; set y position (birds higher)
+    cmp obstacleType[esi*4], 0
+    je cactusY
 
-mov edx,OFFSET boxTB
-call WriteString
-ret
-createGround endp
+	mov eax, 3
+	call RandomRange
+    add eax, 23 ; bird y position range 23-25
+    mov obstacleY[esi*4], eax   ; bird height
 
-game proc
-mov ecx, 0
-gameLoop:
-mov dl, 105
-mov dh, 4
-call Gotoxy
-mov edx, OFFSET scoreText
-call WriteString
-mov dl, 112
-mov dh, 4; changing the score counter so that it does not rely on ECX
-call Gotoxy 
-mov eax, [score]
-call WriteDec
-call createGround
-	.IF	gameLoopBit == 0 ; while true 
-	dec [cactusXPos]
-	dec [birdXPos]
-	mov dl, [cactusXPos]
-	; if cactus is at the left edge of the screen, reset it
-	cmp dl, 1
-	je resetCactus
+    jmp done
+cactusY:
+    mov obstacleY[esi*4], 26   ; cactus height
+done:
+	mov obstacleX[esi*4], 116 ; spawn at right edge
+	ret
+spawnNewObstacle endp
+
+
+updateObstacles proc
+mov ecx, MAX_OBSTACLES
+mov esi, 0
+
+updateLoop:
+    cmp obstacleActive[esi*4], 0
+    je skipUpdate
+
+    ; move obstacle left by 1 pixel per frame
+    mov eax, obstacleX[esi*4]
+    dec eax
+    mov obstacleX[esi*4], eax
+
+    ; check if offscreen
+    cmp eax, 1
+    jg skipUpdate
+    mov obstacleActive[esi*4], 0  ; deactivate if off left side
+	.IF currAmount != 0
+	dec currAmount
+	.ENDIF
+
+skipUpdate:
+    inc esi
+    loop updateLoop
+	ret
+updateObstacles endp
+
+
+drawObstacles proc
+push edi
+mov edi, MAX_OBSTACLES
+mov esi, 0
+
+drawLoop:
+    cmp obstacleActive[esi*4], 0
+    je skipDraw
+
+    mov eax, obstacleType[esi*4]
+    cmp eax, 0
+    je printCactus
+
+    ; draw bird
+    mov eax, obstacleX[esi*4]
+    mov ebx, obstacleY[esi*4]
+    jmp printBird
+    jmp skipDraw
 
 printCactus:
 	; this block prints the cactus, top and bottom
-	mov dl, [cactusXPos]
+	mov eax, obstacleX[esi*4]
+	mov dl, al
 	mov dh, 26
 	call Gotoxy
 	mov edx, OFFSET cactusTest
 	call WriteString
-	mov dl, [cactusXPos]
+	mov eax, obstacleX[esi*4]
+	mov dl, al
 	mov dh, 27
 	call Gotoxy
 	mov edx, OFFSET cactusTest2
 	call WriteString
+	jmp skipDraw
 
-	mov dl, [birdXPos]
-	cmp dl, 1
-	je resetBird
 
 printBird:
 	; this block prints the bird
-	mov dl, [birdXPos]
-	mov dh, 24
+	mov eax, obstacleX[esi*4]
+	mov dl, al
+	mov eax, obstacleY[esi*4]
+	mov dh, al
 	call Gotoxy
 	.IF birdFlip <= 10
 	mov edx, OFFSET bird
@@ -117,6 +191,126 @@ printBird:
 	jmp printBird
 	.ENDIF
 
+skipDraw:
+    inc esi
+    dec edi
+	cmp edi, 0
+	jne drawLoop
+	pop edi
+	ret
+
+drawObstacles endp
+
+checkCollisions proc
+    push ebx
+    push edi
+    push esi
+
+    mov esi, DINO_X                     ; ESI = dino left X
+    mov eax, DINO_X + DINO_W - 1       ; EAX = dino right X
+    movzx edx, dinoCount
+    mov ecx, DINO_BASE_Y
+    sub ecx, edx                       ; ECX = dino vertical pos
+
+    xor ebx, ebx                       ; EBX = obstacle index = 0
+
+obstacleLoop:
+    mov edx, DWORD PTR obstacleActive[ebx*4]
+    cmp edx, 0
+    je skipObstacle
+
+    mov edx, DWORD PTR obstacleType[ebx*4]
+    cmp edx, 0
+    je checkCactus
+
+    ; --- Bird check ---
+    mov edx, DWORD PTR obstacleX[ebx*4] ; EDX = bird left
+    mov edi, edx
+    add edi, BIRD_W - 1                ; EDI = bird right
+
+    cmp eax, edx                       ; if dino.right < bird.left => no overlap
+    jb skipObstacle
+    cmp edi, esi                       ; if bird.right < dino.left => no overlap
+    jb skipObstacle
+
+    mov edx, DWORD PTR obstacleY[ebx*4] ; EDX = bird Y
+    mov edi, edx
+    cmp ecx, edx                       ; if dino.bottom < bird.top => no overlap
+    jb skipObstacle
+    cmp edi, ecx                       ; if bird.bottom < dino.top => no overlap
+    jb skipObstacle
+
+    mov gameLoopBit, 1
+    jmp collisionExit
+
+checkCactus:
+    ; --- Cactus check ---
+    mov edx, DWORD PTR obstacleX[ebx*4] ; EDX = cactus left
+    mov edi, edx
+    add edi, CACTUS_W - 1
+
+    cmp eax, edx
+    jb skipObstacle
+    cmp edi, esi
+    jb skipObstacle
+
+    mov edx, CACTUS_Y - (CACTUS_H - 1)  ; cactus top
+    mov edi, CACTUS_Y                   ; cactus bottom
+    cmp ecx, edx
+    jb skipObstacle
+    cmp edi, ecx
+    jb skipObstacle
+
+    mov gameLoopBit, 1
+    jmp collisionExit
+
+skipObstacle:
+    inc ebx
+    cmp ebx, MAX_OBSTACLES
+    jl obstacleLoop
+
+collisionExit:
+    pop esi
+    pop edi
+    pop ebx
+    ret
+checkCollisions endp
+
+createGround proc
+mov dl, 0
+mov dh, 28
+call Gotoxy
+
+mov edx,OFFSET boxTB
+call WriteString
+ret
+createGround endp
+
+game proc
+call Randomize
+; initialize first spawn delay
+mov eax, 40            ; max frames to wait before first spawn
+call RandomRange       ; EAX = 0–79
+add eax, 40            ; ensure at least 40 frame delay
+mov spawnDelay, eax
+mov ecx, 0
+gameLoop:
+mov dl, 105
+mov dh, 4
+call Gotoxy
+mov edx, OFFSET scoreText
+call WriteString
+mov dl, 112
+mov dh, 4; changing the score counter so that it does not rely on ECX
+call Gotoxy 
+mov eax, [score]
+call WriteDec
+call createGround
+	.IF	gameLoopBit == 0 ; while true 
+	call drawObstacles	
+	call updateObstacles
+
+
 printDino:
 	; this block prints the dinosaur
 	mov dl, 10
@@ -127,61 +321,6 @@ printDino:
 	mov edx, OFFSET tempDino
 	call WriteString
 
-	; this block checks if the dinosaur is in the air, if it is send to jump function
-	; ---- Collisions ----
-	movzx eax, dinoCount ; The player character's vertical offset
-	mov ecx, DINO_BASE_Y ; Load the base Y pos of player character (dino)
-	sub ecx, eax         ; subtracting the jump offset to find current y pos
-
-	; --- AABB vs CACTUS ---
-	mov esi, DINO_X                ; ESI => left X coord of player
-	mov edi, DINO_X + DINO_W - 1   ; EDI => right X coord of player
-	movzx ebx, cactusXPos          ; EBX = current X pos of cactus
-	mov edx, ebx                   ; copy cactus left X into EDX
-	add edx, CACTUS_W - 1          ; EDX => right X coord of the cactus
-
-	cmp edi, ebx    ; If dino.right < cactus.left then => no collision
-	jb noCactusX    
-	cmp edx, esi    ; If cactus.right < dino.left then => no collision
-	jb noCactusX
-	 
-	; --- Vertical Overlap checking ---
-	mov ebx, CACTUS_Y - (CACTUS_H - 1)    ; EBX => cactus top y coord
-	mov edx, CACTUS_Y                     ; EDX => cactus bottom y coord
-	cmp ecx, ebx                          ; If dino.bottom < catcus.top then => no collision
-	jb noCactusX
-	cmp edx, ecx                          ; If cactus.bottom < dino.top then => no collision
-	jb noCactusX
-
-	; if both X and Y overlap => collision
-	mov gameLoopBit, 1 ; sets flag to break game loop
-	jmp exitGameLoop   ; Jump to Game Over
-
-noCactusX:
-    ; --- Bird ---
-	mov esi, DINO_X                 ; ESI => dino left X
-	mov edi, DINO_X + DINO_W - 1    ; EDI => dino right X
-	movzx ebx, birdXPos             ; EBX => bird left X
-	mov edx, ebx                    
-	add edx, BIRD_W - 1             ; EDX => bird right X
-
-	cmp edi, ebx                    ; If dino.right < bird.left then => no overlap
-	jb noBirdX
-	cmp edx, esi                    ; If bird.right < dino.left then => no overlap
-	jb noBirdX
-
-	mov ebx, BIRD_Y                 ; EBX => bird Y coord 1x1(for now)
-	mov edx, BIRD_Y                 
-	cmp ecx, ebx                    ; If dino.bottom < bird.top then => no overlap
-	jb noBirdX
-	cmp edx, ecx                    ; If bird.bottom < dino.top then => no overlap
-	jb noBirdX
-
-	; overlap = game over
-	mov gameLoopBit, 1
-	jmp exitGameLoop
-
-noBirdX:
 	cmp jumpBool,  1 ; Is the dino already jumping
 	je jumpDinosaur  ; If then continue jump arc
 	; --- keyboard check ---
@@ -197,6 +336,11 @@ noBirdX:
 	noKeyPressed:
 	; if no key or wrong key move on
 
+	call checkCollisions
+	.IF gameLoopBit != 0
+	jmp exitGameLoop
+	.ENDIF
+
 readyNextFrame:
 	inc [score] ; just to make it not infinite for now
 	
@@ -206,9 +350,27 @@ readyNextFrame:
 	call Gotoxy 
 	
 	; this controls how long we wait, frames per second essentially
-	mov eax, 35 ; 0.035 seconds
+	.IF score > 1500
+		mov eax, 20 ; 0.025 seconds
+	.ELSEIF score > 1000
+		mov eax, 27 ; 0.03 seconds
+	.ELSE
+		mov eax, 33 ; 0.0375 seconds
+	.ENDIF
 	call Delay
 	call Clrscr
+	dec spawnDelay
+	jnz skipSpawn
+    ; reset spawnDelay to new random interval
+    mov eax, 30
+    call RandomRange
+    add eax, 30
+    mov spawnDelay, eax
+	.IF currAmount < 10
+    call spawnNewObstacle
+	inc currAmount
+	.ENDIF
+skipSpawn:
 	jmp gameLoop	
 	.ELSE
 	ret
@@ -254,13 +416,7 @@ readyNextFrame:
 		mov byte ptr [edi],0
 		jmp readyNextFrame
 		.endif
-	resetCactus:
-		mov [cactusXPos],116
-		jmp printCactus
 
-	resetBird:
-		mov [birdXPos],105
-		jmp printBird
 
 	exitGameLoop: ; game loop false, aka = 1
 		mov edi, offset gameLoopBit
