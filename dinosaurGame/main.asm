@@ -95,7 +95,7 @@ createObstacle:
 
 	mov eax, 3
 	call RandomRange
-    add eax, 23 ; bird y position range 23-25
+    add eax, 24 ; bird y position range 24-26
     mov obstacleY[esi*4], eax   ; bird height
 
     jmp done
@@ -309,6 +309,10 @@ call createGround
 	.IF	gameLoopBit == 0 ; while true 
 	call drawObstacles	
 	call updateObstacles
+	call checkCollisions
+	.IF gameLoopBit != 0
+	jmp exitGameLoop
+	.ENDIF
 
 
 printDino:
@@ -336,10 +340,7 @@ printDino:
 	noKeyPressed:
 	; if no key or wrong key move on
 
-	call checkCollisions
-	.IF gameLoopBit != 0
-	jmp exitGameLoop
-	.ENDIF
+
 
 readyNextFrame:
 	inc [score] ; just to make it not infinite for now
@@ -400,7 +401,7 @@ skipSpawn:
 
 	dinoGoingUp:
 		mov al, [dinoCount] 
-		cmp al, 8
+		cmp al, 6 ; max height
 		jl incDino ; dino hasn't reached max height
 		mov edi, offset dinoUp ; change direction
 		mov BYTE PTR [edi],1
