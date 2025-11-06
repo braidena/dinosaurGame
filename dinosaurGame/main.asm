@@ -3,8 +3,9 @@ MAX_OBSTACLES = 10
 .data
 boxTB BYTE 120 dup(61),0 ; 61 is '='
 
-startMenu byte "Press space to start!",0
+startMenu byte "Press space to start!",0 ; start menu text
 
+; ---- Obstacle sprites ----
 cactusTest BYTE "\|/",0
 cactusTest2 BYTE "|||",0
 
@@ -17,8 +18,9 @@ gameLoopBit BYTE 0 ; boolean for game loop
 cactusXPos BYTE 116 ; starting x position of cactus
 birdXPos BYTE 116 ; starting x position of bird
 
-currAmount dword ?
-spawnDelay DWORD ?
+
+currAmount dword ? ; current amount of obstacles on screen
+spawnDelay DWORD ? ; frames until next spawn
 obstacleX DWORD MAX_OBSTACLES DUP(116)    ; x positions
 obstacleY DWORD MAX_OBSTACLES DUP(?)    ; y positions
 obstacleType DWORD MAX_OBSTACLES DUP(?) ; 0=cactus, 1=bird
@@ -108,6 +110,7 @@ spawnNewObstacle endp
 
 
 updateObstacles proc
+; updates obstacle positions
 mov ecx, MAX_OBSTACLES
 mov esi, 0
 
@@ -136,6 +139,7 @@ updateObstacles endp
 
 
 drawObstacles proc
+; draws all active obstacles
 push edi
 mov edi, MAX_OBSTACLES
 mov esi, 0
@@ -202,6 +206,7 @@ skipDraw:
 drawObstacles endp
 
 checkCollisions proc
+; checks for collisions between dino and obstacles
     push ebx
     push edi
     push esi
