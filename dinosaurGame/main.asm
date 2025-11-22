@@ -45,7 +45,7 @@ DINO_X		EQU 10
 DINO_W		EQU 3
 DINO_H		EQU 1
 DINO_BASE_Y	EQU 27
-
+;HERE!!!!!!
 ; ---- Cacti_1 ----
 CACTUS_W		EQU 3
 CACTUS_H		EQU 2
@@ -204,7 +204,7 @@ skipDraw:
 	ret
 
 drawObstacles endp
-
+;HERE!!!!!!
 checkCollisions proc
 ; checks for collisions between dino and obstacles
     push ebx
@@ -227,7 +227,7 @@ obstacleLoop:
     mov edx, DWORD PTR obstacleType[ebx*4]
     cmp edx, 0
     je checkCactus
-
+	;HERE!!!!!!
     ; --- Bird check ---
     mov edx, DWORD PTR obstacleX[ebx*4] ; EDX = bird left
     mov edi, edx
@@ -247,7 +247,8 @@ obstacleLoop:
 
     mov gameLoopBit, 1
     jmp collisionExit
-
+	;HERE!!!!
+	;!!!!!!!
 checkCactus:
     ; --- Cactus check ---
     mov edx, DWORD PTR obstacleX[ebx*4] ; EDX = cactus left
@@ -265,7 +266,7 @@ checkCactus:
     jb skipObstacle
     cmp edi, ecx
     jb skipObstacle
-
+	; ecx -> ebx
     mov gameLoopBit, 1
     jmp collisionExit
 
