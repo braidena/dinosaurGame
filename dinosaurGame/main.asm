@@ -160,6 +160,8 @@ drawLoop:
 
 printCactus:
 	; this block prints the cactus, top and bottom
+	mov eax, lightGreen + (white * 16)
+    call SetTextColor
 	mov eax, obstacleX[esi*4]
 	mov dl, al
 	mov dh, 26
@@ -172,6 +174,8 @@ printCactus:
 	call Gotoxy
 	mov edx, OFFSET cactusTest2
 	call WriteString
+	mov eax, black + (white * 16)
+    call SetTextColor
 	jmp skipDraw
 
 
