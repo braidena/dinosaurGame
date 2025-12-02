@@ -460,6 +460,9 @@ game endp
 
 main PROC
 ; write the start text and dinosaur
+mov eax, black + (white * 16) ; Set text Black, Background White
+call SetTextColor
+call Clrscr
 mov dl, 10
 mov dh, 20
 call Gotoxy
