@@ -181,6 +181,8 @@ printCactus:
 
 printBird:
 	; this block prints the bird
+	mov eax, red + (white * 16)
+    call SetTextColor
 	mov eax, obstacleX[esi*4]
 	mov dl, al
 	mov eax, obstacleY[esi*4]
@@ -198,6 +200,8 @@ printBird:
 	mov BYTE PTR [birdFlip],0
 	jmp printBird
 	.ENDIF
+	mov eax, black + (white * 16)
+    call SetTextColor
 
 skipDraw:
     inc esi
