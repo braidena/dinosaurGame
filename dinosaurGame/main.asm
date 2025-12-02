@@ -290,12 +290,16 @@ collisionExit:
 checkCollisions endp
 
 createGround proc
+mov eax, brown + (white * 16)
+call SetTextColor
 mov dl, 0
 mov dh, 28
 call Gotoxy
 
 mov edx,OFFSET boxTB
 call WriteString
+mov eax, black + (white * 16)
+call SetTextColor
 ret
 createGround endp
 
