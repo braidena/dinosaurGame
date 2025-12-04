@@ -163,6 +163,8 @@ drawLoop:
 
 printCactus:
 	; this block prints the cactus, top and bottom
+	mov eax, lightGreen + (white * 16)
+    call SetTextColor
 	mov eax, obstacleX[esi*4]
 	mov dl, al
 	mov dh, 26
@@ -175,11 +177,15 @@ printCactus:
 	call Gotoxy
 	mov edx, OFFSET cactusTest2
 	call WriteString
+	mov eax, black + (white * 16)
+    call SetTextColor
 	jmp skipDraw
 
 
 printBird:
 	; this block prints the bird
+	mov eax, red + (white * 16)
+    call SetTextColor
 	mov eax, obstacleX[esi*4]
 	mov dl, al
 	mov eax, obstacleY[esi*4]
@@ -197,6 +203,8 @@ printBird:
 	mov BYTE PTR [birdFlip],0
 	jmp printBird
 	.ENDIF
+	mov eax, black + (white * 16)
+    call SetTextColor
 
 skipDraw:
     inc esi
@@ -285,12 +293,16 @@ collisionExit:
 checkCollisions endp
 
 createGround proc
+mov eax, brown + (white * 16)
+call SetTextColor
 mov dl, 0
 mov dh, 28
 call Gotoxy
 
 mov edx,OFFSET boxTB
 call WriteString
+mov eax, black + (white * 16)
+call SetTextColor
 ret
 createGround endp
 
@@ -463,6 +475,9 @@ game endp
 
 main PROC
 ; write the start text and dinosaur
+mov eax, black + (white * 16) ; Set text Black, Background White
+call SetTextColor
+call Clrscr
 mov dl, 10
 mov dh, 20
 call Gotoxy
