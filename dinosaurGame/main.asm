@@ -222,15 +222,17 @@ checkCollisions proc
     push edi
     push esi
 
-     mov esi, DINO_X                      ; ESI = dino left X
+    mov esi, DINO_X                      ; ESI = dino left X
     mov eax, DINO_X + DINO_W - 1         ; EAX = dino right X
-    movzx edx, dinoCount                 ; jump offset
-    mov ebx, DINO_BASE_Y
-    sub ebx, edx                         ; EBX = dino BOTTOM Y
-    mov ecx, ebx
+
+    movzx edx, dinoCount
+    mov edi, DINO_BASE_Y
+    sub edi, edx                         ; EDI = dino BOTTOM Y
+
+    mov ecx, edi
     sub ecx, DINO_H - 1                  ; ECX = dino TOP Y
 
-    xor ebx, ebx                       ; EBX = obstacle index = 0
+    xor ebx, ebx              ; EBX = obstacle index = 0
 
 obstacleLoop:
     mov edx, DWORD PTR obstacleActive[ebx*4]
@@ -243,24 +245,24 @@ obstacleLoop:
 
     ; --- Bird check ---
     mov edx, DWORD PTR obstacleX[ebx*4] ; EDX = bird left
-    mov edi, edx
-    add edi, BIRD_W - 1                ; EDI = bird right
+    mov esi, edx
+    add esi, BIRD_W - 1                ; EDI = bird right
 
     cmp eax, edx                       ; if dino.right < bird.left => no overlap
     jb skipObstacle
-    cmp edi, esi                       ; if bird.right < dino.left => no overlap
+    cmp esi, DINO_X                       ; if bird.right < dino.left => no overlap
     jb skipObstacle
 
     mov edx, DWORD PTR obstacleY[ebx*4] ; EDX = bird Y
-    mov edi, edx
-    add edi, BIRD_H - 1                  ; EDI = birdBottom
+    mov esi, edx
+    add esi, BIRD_H - 1                  ; EDI = birdBottom
 
     ; if dinoBottom < birdTop => no overlap
-    cmp ebx, edx                         ; (dinoBottom vs birdTop)
+    cmp edi, edx                         ; (dinoBottom vs birdTop)
     jb skipObstacle
 
     ; if birdBottom < dinoTop => no overlap
-    cmp edi, ecx                         ; (birdBottom vs dinoTop)
+    cmp esi, ecx                         ; (birdBottom vs dinoTop)
     jb skipObstacle
 
 
@@ -269,23 +271,23 @@ obstacleLoop:
 
 checkCactus:
     mov edx, DWORD PTR obstacleX[ebx*4]  ; EDX = cactusLeft
-    mov edi, edx
-    add edi, CACTUS_W - 1                ; EDI = cactusRight
+    mov esi, edx
+    add esi, CACTUS_W - 1                ; EDI = cactusRight
 
     cmp eax, edx                         ; if dinoRight < cactusLeft
     jb skipObstacle
-    cmp edi, esi                         ; if cactusRight < dinoLeft
+    cmp esi, DINO_X                         ; if cactusRight < dinoLeft
     jb skipObstacle
 
     mov edx, CACTUS_Y - (CACTUS_H - 1)   ; EDX = cactusTop
-    mov edi, CACTUS_Y                    ; EDI = cactusBottom
+    mov esi, CACTUS_Y                    ; EDI = cactusBottom
 
     ; if dinoBottom < cactusTop => no overlap
-    cmp ebx, edx                         ; (dinoBottom vs cactusTop)
+    cmp edi, edx                         ; (dinoBottom vs cactusTop)
     jb skipObstacle
 
     ; if cactusBottom < dinoTop => no overlap
-    cmp edi, ecx                         ; (cactusBottom vs dinoTop)
+    cmp esi, ecx                         ; (cactusBottom vs dinoTop)
     jb skipObstacle
 
     ; overlap detected
