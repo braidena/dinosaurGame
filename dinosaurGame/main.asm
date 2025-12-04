@@ -222,11 +222,15 @@ checkCollisions proc
     push edi
     push esi
 
-    mov esi, DINO_X                     ; ESI = dino left X
-    mov eax, DINO_X + DINO_W - 1       ; EAX = dino right X
-    movzx edx, dinoCount
-    mov ecx, DINO_BASE_Y
-    sub ecx, edx                       ; ECX = dino vertical pos
+     mov esi, DINO_X                      ; ESI = dino left X
+    mov eax, DINO_X + DINO_W - 1         ; EAX = dino right X
+    movzx edx, dinoCount                 ; jump offset
+    mov ebx, DINO_BASE_Y
+    sub ebx, edx                         ; EBX = dino BOTTOM Y
+    mov ecx, ebx
+    sub ecx, DINO_H - 1                  ; ECX = dino TOP Y
+    xor edx, edx                         ; clear EDX for reuse
+    xor edi, edi                         ; clear EDI for reuse
 
     xor ebx, ebx                       ; EBX = obstacle index = 0
 
