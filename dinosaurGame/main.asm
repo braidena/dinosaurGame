@@ -45,8 +45,8 @@ pressAnyMsg BYTE "Press any key to exit...",0
 ; ---- Hitboxes ---- !change for application of adv sprites 
 ; ---- Player ----
 DINO_X		EQU 10
-DINO_W		EQU 3
-DINO_H		EQU 1
+DINO_W		EQU 4 ; 4 long
+DINO_H		EQU 2 ; 2 rows tall
 DINO_BASE_Y	EQU 27
 
 ; ---- Cacti_1 ----
