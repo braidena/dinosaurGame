@@ -348,13 +348,22 @@ call createGround
 
 
 printDino:
-	; this block prints the dinosaur
-	mov dl, 10
+	; --- TOP ROW ---
+	mov dl, DINO_X
 	mov al, [dinoCount]
-	mov dh, 27 ; get the y position from the array based on the frame count
+	mov dh, DINO_BASE_Y-1     ; 26
 	sub dh, al
 	call Gotoxy
-	mov edx, OFFSET tempDino
+	mov edx, OFFSET dinoRow1
+	call WriteString
+
+	; --- BOTTOM ROW ---
+	mov dl, DINO_X
+	mov al, [dinoCount]
+	mov dh, DINO_BASE_Y       ; 27
+	sub dh, al
+	call Gotoxy
+	mov edx, OFFSET dinoRow2
 	call WriteString
 
 	cmp jumpBool,  1 ; Is the dino already jumping
@@ -495,10 +504,17 @@ mov dh, 20
 call Gotoxy
 mov edx, OFFSET startMenu
 call WriteString
-mov dl, 10
-mov dh, 27 ; get the y position from the array based on the frame count
+; draw dino at rest (2x4)
+mov dl, DINO_X
+mov dh, DINO_BASE_Y-1
 call Gotoxy
-mov edx, OFFSET tempDino
+mov edx, OFFSET dinoRow1
+call WriteString
+
+mov dl, DINO_X
+mov dh, DINO_BASE_Y
+call Gotoxy
+mov edx, OFFSET dinoRow2
 call WriteString
 
 waitForSpace:
