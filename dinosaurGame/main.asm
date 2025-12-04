@@ -229,8 +229,6 @@ checkCollisions proc
     sub ebx, edx                         ; EBX = dino BOTTOM Y
     mov ecx, ebx
     sub ecx, DINO_H - 1                  ; ECX = dino TOP Y
-    xor edx, edx                         ; clear EDX for reuse
-    xor edi, edi                         ; clear EDI for reuse
 
     xor ebx, ebx                       ; EBX = obstacle index = 0
 
@@ -255,32 +253,42 @@ obstacleLoop:
 
     mov edx, DWORD PTR obstacleY[ebx*4] ; EDX = bird Y
     mov edi, edx
-    cmp ecx, edx                       ; if dino.bottom < bird.top => no overlap
+    add edi, BIRD_H - 1                  ; EDI = birdBottom
+
+    ; if dinoBottom < birdTop => no overlap
+    cmp ebx, edx                         ; (dinoBottom vs birdTop)
     jb skipObstacle
-    cmp edi, ecx                       ; if bird.bottom < dino.top => no overlap
+
+    ; if birdBottom < dinoTop => no overlap
+    cmp edi, ecx                         ; (birdBottom vs dinoTop)
     jb skipObstacle
+
 
     mov gameLoopBit, 1
     jmp collisionExit
 
 checkCactus:
-    ; --- Cactus check ---
-    mov edx, DWORD PTR obstacleX[ebx*4] ; EDX = cactus left
+    mov edx, DWORD PTR obstacleX[ebx*4]  ; EDX = cactusLeft
     mov edi, edx
-    add edi, CACTUS_W - 1
+    add edi, CACTUS_W - 1                ; EDI = cactusRight
 
-    cmp eax, edx
+    cmp eax, edx                         ; if dinoRight < cactusLeft
     jb skipObstacle
-    cmp edi, esi
-    jb skipObstacle
-
-    mov edx, CACTUS_Y - (CACTUS_H - 1)  ; cactus top
-    mov edi, CACTUS_Y                   ; cactus bottom
-    cmp ecx, edx
-    jb skipObstacle
-    cmp edi, ecx
+    cmp edi, esi                         ; if cactusRight < dinoLeft
     jb skipObstacle
 
+    mov edx, CACTUS_Y - (CACTUS_H - 1)   ; EDX = cactusTop
+    mov edi, CACTUS_Y                    ; EDI = cactusBottom
+
+    ; if dinoBottom < cactusTop => no overlap
+    cmp ebx, edx                         ; (dinoBottom vs cactusTop)
+    jb skipObstacle
+
+    ; if cactusBottom < dinoTop => no overlap
+    cmp edi, ecx                         ; (cactusBottom vs dinoTop)
+    jb skipObstacle
+
+    ; overlap detected
     mov gameLoopBit, 1
     jmp collisionExit
 
