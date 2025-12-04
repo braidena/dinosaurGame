@@ -28,7 +28,10 @@ obstacleActive DWORD MAX_OBSTACLES DUP(0) ; 0=inactive, 1=active
 
 jumpBool BYTE 0 ; boolean for if the dinosaur is jumping
 
-tempDino BYTE "|o|",0 ; the dinosaur, temporary
+; --- 2x4 Dino Sprite ---
+dinoRow1 BYTE " ==D",0 
+dinoRow2 BYTE "/l^ ",0 
+
 dinoCount BYTE 0 ; counter for the dinosaur y array
 dinoUp BYTE 0 ; boolean for if the dinosaur is going up or down
 dinoWait BYTE 1 ; experiment to get the dinosaur to update every other frame
